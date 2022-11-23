@@ -1,0 +1,22 @@
+@Composable
+fun StickyHeader() {
+    val scrollState = rememberScrollState()
+    val paddingState = animateDpAsState(targetValue = if (scrollState.value < 300) 20.dp else 0.dp)
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(state = scrollState)) {
+            Spacer(modifier = Modifier.height(300.dp))
+            repeat(15) {
+                Item()
+            }
+        }
+
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .padding(paddingState.value)
+            .background(color = colorResource(id = R.color.black)))
+    }
+}
