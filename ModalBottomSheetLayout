@@ -1,0 +1,30 @@
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun BottomSheet(scope: CoroutineScope) {
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden)
+
+    ModalBottomSheetLayout(modifier = Modifier
+        .fillMaxSize()
+        .background(color = colorResource(id = R.color.purple_200)),
+        sheetState = sheetState,
+        sheetContent = {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(500.dp))
+        },
+        sheetBackgroundColor = colorResource(id = R.color.white),
+        sheetElevation = 30.dp,
+        sheetContentColor = colorResource(id = R.color.black),
+        sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        scrimColor = colorResource(id = R.color.white)) {
+
+        Button(onClick = {
+            scope.launch { // 외부에서 넘겨 준 rememberCoroutineScope
+                sheetState.show()
+            }
+        }) {
+
+        }
+    }
+}
