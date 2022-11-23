@@ -1,0 +1,21 @@
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun StickyHeader() {
+    val lazyState = rememberLazyListState()
+    val paddingState =
+        animateDpAsState(if (lazyState.firstVisibleItemScrollOffset < 100) 20.dp else 0.dp)
+    LazyColumn(modifier = Modifier.fillMaxWidth(), state = lazyState) {
+        stickyHeader {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(paddingState.value)
+                .background(color = colorResource(id = R.color.black)))
+        }
+        item {
+            repeat(10) {
+                Item()
+            }
+        }
+    }
+}
