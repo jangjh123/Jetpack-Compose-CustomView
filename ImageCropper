@@ -1,0 +1,181 @@
+class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            val offsetX = remember { mutableStateOf(0f) }
+            val offsetY = remember { mutableStateOf(0f) }
+            val movedState = remember { mutableStateOf(false) }
+            val sizeState = remember { mutableStateOf(160f) }
+
+            val displayImageState = remember { mutableStateOf(ImageBitmap(1, 1)) }
+            val displayHeightState = remember { mutableStateOf(0.dp) }
+            val displayWidthState = remember { mutableStateOf(0.dp) }
+
+            val bitmap = resources.getDrawable(R.drawable.image).toBitmap()
+            if (bitmap.height > bitmap.width) {
+                displayWidthState.value = 180.dp
+                displayHeightState.value = 320.dp
+            } else if (bitmap.width > bitmap.height) {
+                displayWidthState.value = 320.dp
+                displayHeightState.value = 180.dp
+            } else {
+                displayWidthState.value = 320.dp
+                displayHeightState.value = 320.dp
+            }
+
+            var scaledImageWidth: Int
+            var scaledImageHeight: Int
+
+            with(LocalDensity.current) {
+                scaledImageWidth = displayWidthState.value.toPx().toInt()
+                scaledImageHeight = displayHeightState.value.toPx().toInt()
+            }
+
+            displayImageState.value = BitmapDrawable(resources,
+                Bitmap.createScaledBitmap(bitmap,
+                    scaledImageWidth,
+                    scaledImageHeight,
+                    true)).bitmap.asImageBitmap()
+
+            ImageEditorTheme {
+                Column(Modifier.fillMaxSize()) {
+                    Box(Modifier
+                        .height(400.dp)
+                        .fillMaxWidth()
+                        .background(Color.Gray)) {
+
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .height(displayHeightState.value)
+                                .width(displayWidthState.value)
+                                .border(width = 2.dp, color = Color.Green)
+                        ) {
+                            Image(bitmap = displayImageState.value,
+                                contentDescription = null,
+                                contentScale = ContentScale.FillBounds)
+                            CircularCropper(
+                                offsetX = offsetX,
+                                offsetY = offsetY,
+                                movedState = movedState,
+                                sizeState = sizeState,
+                                scaledImageWidth,
+                                scaledImageHeight
+                            )
+                        }
+                    }
+
+                    val croppedImageState = remember { mutableStateOf(ImageBitmap(1, 1)) }
+
+                    Button(
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(50.dp)
+                            .align(CenterHorizontally),
+                        colors = ButtonDefaults.buttonColors(Color.Black),
+                        onClick = {
+                            println("image Width ${displayImageState.value.width}")
+                            println("image Height ${displayImageState.value.height}")
+                            println("offsetX ${offsetX.value}")
+                            println("offsetY ${offsetY.value}")
+                            println("size ${sizeState.value}")
+
+                            croppedImageState.value = Bitmap.createBitmap(
+                                displayImageState.value.asAndroidBitmap(),
+                                (offsetX.value - sizeState.value).roundToInt(),
+                                (offsetY.value - sizeState.value).roundToInt(),
+                                sizeState.value.roundToInt() * 2,
+                                sizeState.value.roundToInt() * 2
+                            ).asImageBitmap()
+                        }) {
+                        Text(modifier = Modifier
+                            .align(CenterVertically)
+                            .wrapContentSize(),
+                            text = "Crop", color = Color.White)
+                    }
+
+                    Image(
+                        modifier = Modifier
+                            .padding(top = 40.dp)
+                            .border(width = 4.dp, color = Color.Green, shape = CircleShape)
+                            .clip(CircleShape)
+                            .align(CenterHorizontally)
+                            .size(120.dp),
+                        bitmap = croppedImageState.value, contentDescription = "cropped",
+                        contentScale = ContentScale.FillBounds)
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun CircularCropper(
+    offsetX: MutableState<Float>,
+    offsetY: MutableState<Float>,
+    movedState: MutableState<Boolean>,
+    sizeState: MutableState<Float>,
+    frameWidthPx: Int,
+    frameHeightPx: Int,
+) {
+    if (offsetX.value - sizeState.value < 0) {
+        offsetX.value = sizeState.value
+    }
+    if (offsetY.value - sizeState.value < 0) {
+        offsetY.value = sizeState.value
+    }
+    if (offsetX.value + sizeState.value > frameWidthPx) {
+        offsetX.value = frameWidthPx - sizeState.value
+    }
+    if (offsetY.value + sizeState.value > frameHeightPx) {
+        offsetY.value = frameHeightPx - sizeState.value
+    }
+    if (sizeState.value * 2 > frameWidthPx) {
+        sizeState.value = (frameWidthPx / 2).toFloat()
+    }
+
+    val state = rememberTransformableState { zoomChange, _, _ ->
+        sizeState.value *= zoomChange
+    }
+
+
+    Canvas(modifier = Modifier
+        .fillMaxSize()
+        .pointerInput(Unit) {
+            detectDragGestures { change, dragAmount ->
+                change.consumeAllChanges()
+                offsetX.value += dragAmount.x
+                offsetY.value += dragAmount.y
+            }
+        }
+        .transformable(state = state), onDraw = {
+        val circlePath = Path().apply {
+            addOval(
+                Rect(
+                    if (!movedState.value) {
+                        offsetX.value = center.x
+                        offsetY.value = center.y
+                        movedState.value = true
+                        center
+                    } else {
+                        Offset(offsetX.value, offsetY.value)
+                    }, sizeState.value
+                )
+            )
+        }
+
+        clipPath(circlePath, clipOp = ClipOp.Difference) {
+            drawRect(brush = SolidColor(Color(0x88000000)))
+        }
+    })
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    ImageEditorTheme {
+
+    }
+}
