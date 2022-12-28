@@ -1,0 +1,132 @@
+package com.example.indicator
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.example.indicator.ui.theme.IndicatorTheme
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.PagerState
+import com.google.accompanist.pager.rememberPagerState
+
+class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalPagerApi::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            IndicatorTheme {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val state = rememberPagerState()
+                    val list = listOf(0, 1, 2, 3)
+                    HorizontalPager(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp),
+                        state = state,
+                        count = list.size
+                    ) { idx ->
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .background(color = when (list[idx]) {
+                                0 -> {
+                                    Color(0xFFFFA500)
+                                }
+                                1 -> {
+                                    Color(0xCCFFA500)
+                                }
+                                2 -> {
+                                    Color(0x99FFA500)
+                                }
+                                else -> {
+                                    Color(0x66FFA500)
+                                }
+                            }))
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                    ) {
+                        HorizontalPagerIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            count = list.size,
+                            state = state,
+                            focusedColor = Color(0xFFFFA500),
+                            unfocusedColor = Color(0x33FFA500))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalPagerApi::class)
+@Composable
+fun HorizontalPagerIndicator(
+    modifier: Modifier,
+    count: Int,
+    state: PagerState,
+    focusedColor: Color,
+    unfocusedColor: Color,
+) {
+    Row(
+        modifier = modifier
+    ) {
+        for (i in 0 until count) {
+            IndicatorSymbol(
+                currentItemIndex = state.currentPage,
+                symbolIndex = i,
+                focusedColor = focusedColor,
+                unfocusedColor = unfocusedColor
+            )
+        }
+    }
+}
+
+@Composable
+fun IndicatorSymbol(
+    currentItemIndex: Int,
+    symbolIndex: Int,
+    focusedColor: Color,
+    unfocusedColor: Color,
+) {
+    val widthState =
+        animateDpAsState(
+            targetValue =
+            if (currentItemIndex == symbolIndex) 24.dp
+            else 8.dp)
+    val colorState =
+        animateColorAsState(
+            targetValue =
+            if (currentItemIndex == symbolIndex) focusedColor
+            else unfocusedColor)
+
+    Box(modifier = Modifier
+        .width(24.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(
+                    shape = RoundedCornerShape(255.dp)
+                )
+                .width(widthState.value)
+                .height(8.dp)
+                .background(
+                    color = colorState.value)
+                .align(Alignment.Center)
+        )
+    }
+}
